@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import Image from 'next/image'
 import { FiArrowUpRight } from 'react-icons/fi'
 import { AiOutlineDown } from 'react-icons/ai'
 import { HiOutlineDotsVertical } from 'react-icons/hi'
+
 import ethLogo from '../assets/eth.png'
 import uniswapLogo from '../assets/uniswap.png'
+import { TransactionContext } from '../context/TranscationContext'
 
 const style = {
   wrapper: `p-4 flex w-screen justify-between items-center`,
@@ -23,6 +25,9 @@ const style = {
 
 const Header = () => {
   const [selectedNav, setSelectedNav] = useState('swap')
+  const { connectWallet, currentAccount } = useContext(TransactionContext)
+
+  console.log({ connectWallet, currentAccount })
 
   return (
     <div className={style.wrapper}>
@@ -82,18 +87,28 @@ const Header = () => {
           </div>
         </div>
 
-        <div
-          onClick={() => connectWallet()}
-          className={`${style.button} ${style.buttonPadding} border-2 border-[#163256] text-center transition-all duration-200 hover:border-[#234169]`}
-          style={{
-            backgroundColor: '#172A42',
-          }}
-        >
-          <div className={`${style.buttonAccent} ${style.buttonPadding}`}>
-            <p className={`mr-1`}>Connect</p>
-            <p>Wallet</p>
+        {currentAccount ? (
+          <div
+            className={`${style.button} ${style.buttonPadding} cursor-default border-2 border-[#234169] text-center transition-all duration-200`}
+          >
+            <div className={`${style.buttonTextContainer} px-2`}>
+              0x3h...5ecd
+            </div>
           </div>
-        </div>
+        ) : (
+          <div
+            onClick={() => connectWallet()}
+            className={`${style.button} ${style.buttonPadding} border-2 border-[#163256] text-center transition-all duration-200 hover:border-[#234169]`}
+            style={{
+              backgroundColor: '#172A42',
+            }}
+          >
+            <div className={`${style.buttonAccent} ${style.buttonPadding}`}>
+              <p className={`mr-1`}>Connect</p>
+              <p>Wallet</p>
+            </div>
+          </div>
+        )}
 
         <div className={`${style.button} ${style.buttonPadding}`}>
           <div className={`${style.buttonIconContainer} mx-2`}>
