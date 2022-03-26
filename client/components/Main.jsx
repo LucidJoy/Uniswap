@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import Image from 'next/image'
 import { RiSettings3Fill } from 'react-icons/ri'
 import { AiOutlineDown } from 'react-icons/ai'
 
 import ethLogo from '../assets/eth.png'
+import { TransactionContext } from '../context/TranscationContext'
 
 const style = {
   wrapper: `w-screen flex items-center justify-center mt-14`,
@@ -20,6 +21,18 @@ const style = {
 }
 
 const Main = () => {
+  const { formData, handleChange, sendTransaction } =
+    useContext(TransactionContext)
+
+  const handleSubmit = async (e) => {
+    const { addressTo, amount } = formData
+    e.preventDefault()
+
+    if (!addressTo || !amount) return
+
+    sendTransaction()
+  }
+
   return (
     <div className={style.wrapper}>
       <div className={style.content}>
