@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { contractABI, contractAddress } from '../lib/constants'
 import { ethers } from 'ethers'
+import { client } from '../lib/sanityClient'
 
 export const TransactionContext = React.createContext()
 
@@ -18,6 +19,8 @@ const getEthereumContract = () => {
     contractABI,
     signer
   )
+
+  return transactionContract
 }
 
 export const TransactionProvider = ({ children }) => {
@@ -28,6 +31,20 @@ export const TransactionProvider = ({ children }) => {
   useEffect(() => {
     checkIfWalletIsConnected()
   }, [])
+
+  useEffect(() => {
+    if (!currentAccount) return
+    ;(async () => {
+      const userDoc = {
+        _type: 'users',
+        _id: currentAccount,
+        userName: 'Unnamed',
+        address: currentAccount,
+      }
+
+      await client?.createIfNotExists(userDoc)
+    })()
+  }, [currentAccount])
 
   const connectWallet = async (metamask = eth) => {
     try {
@@ -73,13 +90,13 @@ export const TransactionProvider = ({ children }) => {
           {
             from: connectedAccount,
             to: addressTo,
-            gas: '0x7EF40', // 52000 gwei
+            gas: '0x7EF40', // 520000 Gwei
             value: parsedAmount._hex,
           },
         ],
       })
 
-      const transactionHash = await transactionContract.publishTransaction(
+      const transactionHash = await transactionContract?.publishTransaction(
         addressTo,
         parsedAmount,
         `Transferring ETH ${parsedAmount} to ${addressTo}`,
@@ -90,12 +107,12 @@ export const TransactionProvider = ({ children }) => {
 
       await transactionHash.wait()
 
-      // await saveTransaction(
-      //   transactionHash.hash,
-      //   amount,
-      //   connectedAccount,
-      //   addressTo
-      // )
+      await saveTransaction(
+        transactionHash.hash,
+        amount,
+        connectedAccount,
+        addressTo
+      )
 
       setIsLoading(false)
     } catch (error) {
@@ -105,6 +122,37 @@ export const TransactionProvider = ({ children }) => {
 
   const handleChange = (e, name) => {
     setFormData((prevState) => ({ ...prevState, [name]: e.target.value }))
+  }
+
+  const saveTransaction = async (
+    txHash,
+    amount,
+    fromAddress = currentAccount,
+    toAddress
+  ) => {
+    const txDoc = {
+      _type: 'transactions',
+      _id: txHash,
+      fromAddress: fromAddress,
+      toAddress: toAddress,
+      timestamp: new Date(Date.now()).toISOString(),
+      txHash: txHash,
+      amount: parseFloat(amount),
+    }
+
+    await client.createIfNotExists(txDoc)
+
+    await client
+      .patch(currentAccount)
+      .setIfMissing({ transactions: [] })
+      .insert('after', 'transactions[-1]', [
+        {
+          _key: txHash,
+          _ref: txHash,
+          _type: 'reference',
+        },
+      ])
+      .commit()
   }
 
   return (
